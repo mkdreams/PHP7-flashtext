@@ -1,0 +1,2 @@
+# PHP7-flashtext
+ 
