@@ -5,3 +5,4 @@
 *.sln
 .vs*
 Debug*
+m-tests*
