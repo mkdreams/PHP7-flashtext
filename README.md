@@ -4,6 +4,8 @@
 - solr等分词工具搜索出结果需要反拿关键词。
 
 ## 性能测试
+（5000字文章，重复执行100次所用时间）
+
 ![avatar](https://github.com/chenlincolin/PHP7-flashtext/blob/master/docs/flashtext%20performance%20test%2020190827.png)
 
 ## 相关项目
