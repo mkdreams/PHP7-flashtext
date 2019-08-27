@@ -9,7 +9,15 @@ phpsrc-PHP版本（真实项目中已使用过）
 .-C++扩展代码（效果不理想，执行时间太长，C++功底还不足）  
 
 ## 性能测试
-（5000字文章，重复执行100次所用时间）
+- 5000字文章，重复执行100次所用时间
+- preg版本测试代码
+```
+//$words 为关键词数量
+//$content 为正文
+foreach($words as $word) {
+    preg_match('/'.preg_quote($word).'/i', $content);
+}
+```
 
 ![avatar](https://github.com/chenlincolin/PHP7-flashtext/blob/master/docs/flashtext%20performance%20test%2020190827.png)
 
