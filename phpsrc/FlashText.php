@@ -1,5 +1,5 @@
 <?php
-class FlashTextModel{
+class FlashText{
     public $tree;
     public function treeArr($array) {
         foreach($array as $key => $string) {
@@ -19,8 +19,7 @@ class FlashTextModel{
         return $this->tree;
     }
     
-    public function getKeyIndex($sContent,$holdCronModel) {
-        $strlen = mb_strlen($sContent,"utf8");
+    public function getKeyIndex($sContent) {
         $nowTree = [];
         $result = [];
         $oneWordArr = preg_split('//u', $sContent, null, PREG_SPLIT_NO_EMPTY);
