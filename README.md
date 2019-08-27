@@ -21,5 +21,8 @@ foreach($words as $word) {
 
 ![avatar](https://github.com/chenlincolin/PHP7-flashtext/blob/master/docs/flashtext%20performance%20test%2020190827.png)
 
+## 原理说明
+flashtext提前给关键词创建了索引树，匹配时值遍历正文一次。
+
 ## 相关项目
 - [python flashtext](https://github.com/vi3k6i5/flashtext)
