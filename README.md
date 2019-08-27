@@ -4,6 +4,7 @@
 - solr等分词工具搜索出结果需要反拿关键词。
 
 ## 性能测试
+![avatar](https://github.com/chenlincolin/PHP7-flashtext/blob/master/docs/flashtext%20performance%20test%2020190827.png)
 
 ## 相关项目
 - [python flashtext](https://github.com/vi3k6i5/flashtext)
