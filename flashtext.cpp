@@ -2,35 +2,28 @@
 #include "flashtext.h"
 
 Cflashtext::Cflashtext() {
-	tree = new linkHash(11);
-	//tree = linkHash<string, linkHash<string, int>*>(11);
-	//tree.insert({ "11", new linkHash<string, int>(11) });
+	tree = new Tree();
 }
 
 void Cflashtext::learn(Array keywordsArr) {
 	auto begin = keywordsArr.begin();
 	auto end = keywordsArr.end();
 
-	//linkHash<string, int>* node = &linkHash<string, int>(11);
-	//linkHash<string, int>* node2 = &linkHash<string, int>(11);
-
-	////linkHash<string, int> node2(11);
-	//root.insert({ "12",node });
-	//root.insert({ "13",node2 });
-
-	linkHash* nodeHash;
-	std::pair<const string, linkHash*>* node;
-	char chr;
-	string word;
+	uint8_t unicode;
 	bool isEnd = false;
+	int wordlen = 0;
+	TreeNode* headerNodeMap;
+	TreeNode::NextMap::const_iterator nodePair;
 
 	for (auto i = begin; i != end; i++) {
-		string csi = i.value().toCString();
+		char* csi = i.value().toCString();
 
-		linkHash* header = this->tree;
+		headerNodeMap = this->tree->root;
 
-		for (int i = 0; (chr = csi[i]) != '\0';) {
-			word = this->nextWord(csi, chr, i);
+		for (int i = 0; csi[i] != '\0';) {
+			unicode = this->nextWordUnicode(csi+i, wordlen);
+			i += wordlen;
+
 			if (csi[i] == '\0') {
 				isEnd = true;
 			}
@@ -38,122 +31,169 @@ void Cflashtext::learn(Array keywordsArr) {
 				isEnd = false;
 			}
 
-			node = header->find(word);
-			if (nullptr == node) {
-				nodeHash = new linkHash(11);
+			if (NULL == headerNodeMap->next) {
+				headerNodeMap->next = new TreeNode::NextMap;
+			}
+
+			nodePair = headerNodeMap->next->find(unicode);
+			//not matched
+			if (nodePair == headerNodeMap->next->end()) {
+				TreeNode* nextNode = new TreeNode;
 				if (isEnd == true) {
-					nodeHash->m_isEnd = true;
+					nextNode->m_isEnd = true;
 				}
-				header->insert({ word,  nodeHash });
-				header = nodeHash;
+				headerNodeMap->next->insert(make_pair(unicode, nextNode));
+				headerNodeMap = nextNode;
 			}
 			else {
 				if (isEnd == true) {
-					node->second->m_isEnd = true;
-					header->insert({ word,  node->second });
+					nodePair->second->m_isEnd = true;
 				}
 
-				header = node->second;
+				headerNodeMap = nodePair->second;
 			}
-
-
-			//cout << word << endl;
 		}
 	}
-
 }
 
+uint8_t Cflashtext::nextWordUnicode(string str,int& len) {
+	uint8_t unicode;
+	if ((str[0] & 0x80) == 0) {
+		unicode = (uint8_t)(str[0]) & 0x7f;
+		len = 1;
+	}
+	else if ((str[0] & 0xE0) == 0xC0) {
+		// 110xxxxxx
+		// 5bit, total 5bit
+		unicode = (uint8_t)(str[0]) & 0x1f;
 
-string Cflashtext::nextWord(string csi,char chr,int& i) {
-	string word;
-	if ((chr & 0x80) == 0) {
-		word = chr;
-		i = i + 1;
+		// 6bit, total 11bit
+		unicode <<= 6;
+		unicode |= (uint8_t)(str[1]) & 0x3f;
+		len = 2;
 	}
-	else if ((chr & 0xE0) == 0xC0) {
-		word = csi.substr(i, 2);
-		i = i + 2;
+	else if ((str[0] & 0xF0) == 0xE0) {
+		// 4bit, total 4bit
+		unicode = (uint8_t)(str[0]) & 0x0f;
+
+		// 6bit, total 10bit
+		unicode <<= 6;
+		unicode |= (uint8_t)(str[1]) & 0x3f;
+
+		// 6bit, total 16bit
+		unicode <<= 6;
+		unicode |= (uint8_t)(str[2]) & 0x3f;
+		len = 3;
 	}
-	else if ((chr & 0xF0) == 0xE0) {
-		word = csi.substr(i, 3);
-		i = i + 3;
+	else if ((str[0] & 0xF8) == 0xF0) {
+		// 3bit, total 3bit
+		unicode = (uint8_t)(str[0]) & 0x07;
+
+		// 6bit, total 9bit
+		unicode <<= 6;
+		unicode |= (uint8_t)(str[1]) & 0x3f;
+
+		// 6bit, total 15bit
+		unicode <<= 6;
+		unicode |= (uint8_t)(str[2]) & 0x3f;
+
+		// 6bit, total 21bit
+		unicode <<= 6;
+		unicode |= (uint8_t)(str[3]) & 0x3f;
+
+		len = 4;
 	}
-	else if ((chr & 0xF8) == 0xF0) {
-		word = csi.substr(i, 4);
-		i = i + 4;
+	else {
+		unicode = 1;
+		len = 1;
 	}
 
-	return word;
+
+	return unicode;
 }
 
 Array Cflashtext::match(String content) {
-	linkHash* header = this->tree;
-	std::pair<const string, linkHash*>* node;
+	vector<word*> words;
+	TreeNode* headerNodeMap;
+	TreeNode::NextMap::const_iterator nodePair;
+	int wordlen = 0;
+	headerNodeMap = this->tree->root;
 
+	vector<struct MatchWord*> res;
+	MatchWord* MatchWordTemp;
 
-	linkHash* matchedNode;
+	word* wordTemp;
 
-	CarrayList<linkHash*> matched(16);
+	char* csi = content.c_str();
+	for (int i = 0; csi[i] != '\0';) {
+		wordTemp = new word();
+		wordTemp->unicode = nextWordUnicode(csi+i, wordlen);
+		wordTemp->len = wordlen;
 
-	string csi = content.c_str();
+		words.push_back(wordTemp);
 
-	Array arr;
+		i += wordlen;
+	}
+	int words_size = words.size();
 
-	//node = header->find(_T("m"));
-	//matched.add(node->second);
-	//node = matched.get(0)->find(_T("m"));
+	res.empty();
+	res.resize(words_size);
 
-	char chr;
-	string word;
-	for (int i = 0; (chr = csi[i]) != '\0';) {
-		word = this->nextWord(csi, chr, i);
+	uint8_t unicode,unicodeTemp;
+	for (int i = 0; i < words_size; i++) {
+		for (int j = 0; (i+j < words_size && j < 512); j++) {
+			unicode = words[i+j]->unicode;
 
-		//cout << "words:" << word << endl;
+			if (NULL == headerNodeMap->next) {
+				break;
+			}
 
-		int length = matched.length();
-
-		for (int j = 0; j < length; ) {
-			matchedNode = matched.get(j);
-			node = matchedNode->find(word);
-
-			if (node == nullptr) {
-				matched.remove(j);
-				length--;
+			nodePair = headerNodeMap->next->find(unicode);
+			//not found break;
+			if (nodePair == headerNodeMap->next->end()) {
+				break;
 			}
 			else {
-				node->second->m_preKey = matchedNode->m_preKey + word;
-				if (node->second->m_isEnd == true) {
-					arr.append(node->second->m_preKey);
-					//cout << node->second->m_preKey << " | " << "ok" << endl;
+				if (nodePair->second->m_isEnd == true) {
+					if (NULL == res[i]) {
+						MatchWordTemp = new MatchWord();
+						MatchWordTemp->nexts.push_back(make_pair(i, j+1));
+						MatchWordTemp->pos = i;
+						res[i] = MatchWordTemp;
+					}
+					else {
+						res[i]->nexts.push_back(make_pair(i, j + 1));
+					}
 				}
-				matched.replace(j, node->second);
 
-				//cout << word << endl;
-				j++;
+				headerNodeMap = nodePair->second;
 			}
+
 		}
 
-
-		node = header->find(word);
-
-		if (node != nullptr) {
-			node->second->m_preKey = word;
-			if (node->second->m_isEnd == true) {
-				arr.append(node->second->m_preKey);
-				//cout << "ok" << endl;
-			}
-			matched.add(node->second);
-		}
-
-		/*if (matchedTemp.isEmpty()) {
-			matched.clear();
-		}
-		else {
-			matched = matchedTemp;
-		}*/
-
-		//arr.append(word);
+		headerNodeMap = this->tree->root;
 	}
+
+	Array arr;
+	for (int i = 0; i < words_size; i++) {
+		if (NULL == res[i]) {
+			continue;
+		}
+
+		int len  = res[i]->nexts.size();
+		string temp;
+		for (int j = 0; j < len; j++) {
+			for (int first = 1; first < res[i]->nexts[j].second; first++) {
+				char c[20];
+				itoa(words[res[i]->nexts[j].first + first]->unicode,c,10);
+				temp += c;
+			}
+			arr.append(temp);
+		}
+	}
+	//res to array
+
+
 
 	return arr;
 }

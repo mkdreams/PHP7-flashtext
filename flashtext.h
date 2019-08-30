@@ -1,8 +1,6 @@
 #pragma once
 #include "phpx.h"
-#include "linkHash.h"
-#include "arrayList.h"
-#include <tchar.h>
+#include "Tree.h"
 
 using namespace php;
 using namespace std;
@@ -15,9 +13,9 @@ public:
 	Array match(String content);
 
 private:
-	string nextWord(string csi, char chr, int& i);
+	uint8_t nextWordUnicode(string csi, int& i);
 
 public:
-	linkHash* tree = nullptr;
+	Tree* tree = nullptr;
 };
 
