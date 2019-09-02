@@ -12,6 +12,7 @@ void Cflashtext::learn(Array keywordsArr) {
 	uint8_t unicode;
 	bool isEnd = false;
 	int wordlen = 0;
+	string str_word;
 	TreeNode* headerNodeMap;
 	TreeNode::NextMap::const_iterator nodePair;
 
@@ -21,7 +22,7 @@ void Cflashtext::learn(Array keywordsArr) {
 		headerNodeMap = this->tree->root;
 
 		for (int i = 0; csi[i] != '\0';) {
-			unicode = this->nextWordUnicode(csi+i, wordlen);
+			unicode = this->nextWordUnicode(csi+i, wordlen, str_word);
 			i += wordlen;
 
 			if (csi[i] == '\0') {
@@ -56,11 +57,13 @@ void Cflashtext::learn(Array keywordsArr) {
 	}
 }
 
-uint8_t Cflashtext::nextWordUnicode(string str,int& len) {
+uint8_t Cflashtext::nextWordUnicode(string str, int& len, string& str_word) {
 	uint8_t unicode;
 	if ((str[0] & 0x80) == 0) {
 		unicode = (uint8_t)(str[0]) & 0x7f;
 		len = 1;
+
+		str_word = str.substr(0, 1);
 	}
 	else if ((str[0] & 0xE0) == 0xC0) {
 		// 110xxxxxx
@@ -71,6 +74,8 @@ uint8_t Cflashtext::nextWordUnicode(string str,int& len) {
 		unicode <<= 6;
 		unicode |= (uint8_t)(str[1]) & 0x3f;
 		len = 2;
+
+		str_word = str.substr(0, 2);
 	}
 	else if ((str[0] & 0xF0) == 0xE0) {
 		// 4bit, total 4bit
@@ -84,6 +89,8 @@ uint8_t Cflashtext::nextWordUnicode(string str,int& len) {
 		unicode <<= 6;
 		unicode |= (uint8_t)(str[2]) & 0x3f;
 		len = 3;
+
+		str_word = str.substr(0,3);
 	}
 	else if ((str[0] & 0xF8) == 0xF0) {
 		// 3bit, total 3bit
@@ -102,6 +109,8 @@ uint8_t Cflashtext::nextWordUnicode(string str,int& len) {
 		unicode |= (uint8_t)(str[3]) & 0x3f;
 
 		len = 4;
+
+		str_word = str.substr(0, 4);
 	}
 	else {
 		unicode = 1;
@@ -117,6 +126,7 @@ Array Cflashtext::match(String content) {
 	TreeNode* headerNodeMap;
 	TreeNode::NextMap::const_iterator nodePair;
 	int wordlen = 0;
+	string str_word;
 	headerNodeMap = this->tree->root;
 
 	vector<struct MatchWord*> res;
@@ -127,8 +137,9 @@ Array Cflashtext::match(String content) {
 	char* csi = content.c_str();
 	for (int i = 0; csi[i] != '\0';) {
 		wordTemp = new word();
-		wordTemp->unicode = nextWordUnicode(csi+i, wordlen);
+		wordTemp->unicode = nextWordUnicode(csi+i, wordlen, str_word);
 		wordTemp->len = wordlen;
+		wordTemp->word = str_word;
 
 		words.push_back(wordTemp);
 
@@ -183,10 +194,8 @@ Array Cflashtext::match(String content) {
 		int len  = res[i]->nexts.size();
 		string temp;
 		for (int j = 0; j < len; j++) {
-			for (int first = 1; first < res[i]->nexts[j].second; first++) {
-				char c[20];
-				itoa(words[res[i]->nexts[j].first + first]->unicode,c,10);
-				temp += c;
+			for (int first = 0; first < res[i]->nexts[j].second; first++) {
+				temp += words[res[i]->nexts[j].first + first]->word;
 			}
 			arr.append(temp);
 		}

@@ -13,7 +13,7 @@ public:
 	Array match(String content);
 
 private:
-	uint8_t nextWordUnicode(string csi, int& i);
+	uint8_t nextWordUnicode(string csi, int& i, string& j);
 
 public:
 	Tree* tree = nullptr;

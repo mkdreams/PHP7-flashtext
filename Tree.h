@@ -5,6 +5,7 @@ typedef unsigned int TrieKey;
 
 struct word {
 	uint8_t unicode;
+	string word;
 	int len;
 };
 
